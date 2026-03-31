@@ -1,0 +1,12 @@
+- name: 建置 ISO（修復版🔥）
+  run: |
+    sudo env -i bash -c '
+      export HOME=/root
+      export TERM=xterm
+
+      chmod +x auto/config
+      chmod +x auto/build
+
+      ./auto/config
+      ./auto/build
+    '
