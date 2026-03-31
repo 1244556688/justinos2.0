@@ -1,12 +1,11 @@
-- name: 建置 ISO（修復版🔥）
-  run: |
-    sudo env -i bash -c '
-      export HOME=/root
-      export TERM=xterm
-
-      chmod +x auto/config
-      chmod +x auto/build
-
-      ./auto/config
-      ./auto/build
-    '
+      - name: Configure Live-Build
+        run: |
+          # 核心修正：使用 env -i 移除 GitHub 注入的過長環境變數
+          sudo env -i PATH="$PATH" lb config \
+            --mode debian \
+            --distribution bookworm \
+            --architectures amd64 \
+            --binary-images iso-hybrid \
+            --debian-installer false \
+            --bootappend-live "boot=live components quiet" \
+            --archive-areas "main contrib non-free non-free-firmware"
