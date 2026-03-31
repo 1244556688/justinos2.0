@@ -1,6 +1,28 @@
+name: Build JustinOS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install live-build and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap curl
+
       - name: Configure Live-Build
         run: |
-          # 核心修正：使用 env -i 移除 GitHub 注入的過長環境變數
+          # 使用 env -i 清理過長的 GitHub 環境變數，避免 tr: Argument list too long 錯誤
           sudo env -i PATH="$PATH" lb config \
             --mode debian \
             --distribution bookworm \
@@ -9,3 +31,19 @@
             --debian-installer false \
             --bootappend-live "boot=live components quiet" \
             --archive-areas "main contrib non-free non-free-firmware"
+
+      - name: Build ISO
+        run: |
+          # 執行編譯，建議同樣使用 env -i 確保環境純淨
+          sudo env -i PATH="$PATH" lb build
+
+      - name: Check for ISO file
+        run: |
+          ls -lh *.iso || echo "No ISO file found"
+
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustinOS-Live-ISO
+          path: "*.iso"
+          if-no-files-found: error
