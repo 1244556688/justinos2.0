@@ -22,10 +22,12 @@ jobs:
 
       - name: Configure Live-Build
         run: |
-          # 使用 env -i 清理過長的 GitHub 環境變數，避免 tr: Argument list too long 錯誤
+          # 使用 env -i 清理 GitHub 變數，並修正 Bookworm 的 security 路徑
           sudo env -i PATH="$PATH" lb config \
             --mode debian \
             --distribution bookworm \
+            --parent-mirror-binary-security "http://debian.org" \
+            --mirror-binary-security "http://debian.org" \
             --architectures amd64 \
             --binary-images iso-hybrid \
             --debian-installer false \
@@ -34,11 +36,12 @@ jobs:
 
       - name: Build ISO
         run: |
-          # 執行編譯，建議同樣使用 env -i 確保環境純淨
+          # 執行編譯，同樣維持乾淨環境
           sudo env -i PATH="$PATH" lb build
 
       - name: Check for ISO file
         run: |
+          echo "Listing generated files:"
           ls -lh *.iso || echo "No ISO file found"
 
       - name: Upload ISO Artifact
