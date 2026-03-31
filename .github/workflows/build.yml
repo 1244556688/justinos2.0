@@ -15,17 +15,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install live-build and dependencies
+      - name: Fix APT sources and install dependencies
         run: |
+          # 修正 Ubuntu 環境本身的 Debian 12 來源衝突（選擇性，預防萬一）
+          sudo sed -i 's|bookworm/updates|bookworm-security|g' /etc/apt/sources.list || true
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap curl
 
       - name: Configure Live-Build
         run: |
-          # 使用 env -i 清理 GitHub 變數，並修正 Bookworm 的 security 路徑
+          # 關鍵修正：對於 Debian 12 (bookworm)，必須指定正確的 security 鏡像路徑
+          # 我們將 --parent-mirror-binary-security 指向正確的 debian-security 位址
           sudo env -i PATH="$PATH" lb config \
             --mode debian \
             --distribution bookworm \
+            --parent-mirror-bootstrap "http://debian.org" \
             --parent-mirror-binary-security "http://debian.org" \
             --mirror-binary-security "http://debian.org" \
             --architectures amd64 \
@@ -36,7 +40,8 @@ jobs:
 
       - name: Build ISO
         run: |
-          # 執行編譯，同樣維持乾淨環境
+          # 執行編譯，使用 env -i 確保環境乾淨
+          # 如果 build 失敗，lb 會留下半成品，這會導致重試失敗，所以通常在 clean 環境執行
           sudo env -i PATH="$PATH" lb build
 
       - name: Check for ISO file
